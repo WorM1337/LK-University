@@ -1,0 +1,76 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Личный кабинет абитуриента",
+    "version": "1.0.0",
+    "description": "Поступление, документы, информация и пр."
+  },
+  "servers": [
+    {
+      "url": "https://personal.applicant.cabinet.com"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Регистрация пользователя в системе",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Аккаунт создан"
+          },
+          "400": {
+            "description": "Плохие входные данные"
+          },
+          "500": {
+            "description": "Ошибка сервера"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "surname": { "type": "string" },
+          "lastName": { "type": "string" },
+          "email": { 
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Телефон в формате +7 (000) 000 00-00"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender" 
+          }
+        },
+        "required": ["name", "surname", "email", "password", "birthday", "gender"]
+      },
+      "Gender": {
+        "type": "string",
+        "enum": ["Male", "Female"]
+      }
+    }
+  }
+}
