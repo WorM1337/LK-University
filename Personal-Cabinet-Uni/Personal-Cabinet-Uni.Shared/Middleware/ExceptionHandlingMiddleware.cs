@@ -46,21 +46,21 @@ public class ExceptionHandlingMiddleware
                 response.StatusCode = apiException.StatusCode;
                 errorResponse.Status = apiException.StatusCode;
                 errorResponse.Message = apiException.Message;
-                _logger.LogWarning(apiException, "API Exception: {Message}", apiException.Message);
+                _logger.LogInformation("API Exception {StatusCode}: {Message}", apiException.StatusCode, apiException.Message);
                 break;
 
             case UnauthorizedAccessException _:
                 response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 errorResponse.Status = (int)HttpStatusCode.Unauthorized;
                 errorResponse.Message = "Доступ запрещен. Требуется аутентификация.";
-                _logger.LogWarning(exception, "Unauthorized Access");
+                _logger.LogInformation("Unauthorized Access");
                 break;
 
             case ArgumentException argEx:
                 response.StatusCode = (int)HttpStatusCode.BadRequest;
                 errorResponse.Status = (int)HttpStatusCode.BadRequest;
                 errorResponse.Message = argEx.Message;
-                _logger.LogWarning(exception, "Bad Request: {Message}", argEx.Message);
+                _logger.LogInformation("Bad Request: {Message}", argEx.Message);
                 break;
 
             default:
