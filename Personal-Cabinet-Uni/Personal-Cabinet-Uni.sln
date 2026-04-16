@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "Noti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Personal-Cabinet-Uni.Shared", "Personal-Cabinet-Uni.Shared\Personal-Cabinet-Uni.Shared.csproj", "{43442537-2FB0-4C40-A1E6-4D9231CCA90B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Personal-Cabinet-Uni.AdminPanel", "Personal-Cabinet-Uni.AdminPanel\Personal-Cabinet-Uni.AdminPanel.csproj", "{A8B9C0D1-2E3F-4A5B-8C9D-0E1F2A3B4C5D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{43442537-2FB0-4C40-A1E6-4D9231CCA90B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43442537-2FB0-4C40-A1E6-4D9231CCA90B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43442537-2FB0-4C40-A1E6-4D9231CCA90B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8B9C0D1-2E3F-4A5B-8C9D-0E1F2A3B4C5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8B9C0D1-2E3F-4A5B-8C9D-0E1F2A3B4C5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8B9C0D1-2E3F-4A5B-8C9D-0E1F2A3B4C5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8B9C0D1-2E3F-4A5B-8C9D-0E1F2A3B4C5D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

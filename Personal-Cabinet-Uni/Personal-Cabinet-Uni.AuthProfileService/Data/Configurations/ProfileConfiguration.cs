@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Personal_Cabinet_Uni.Models.Entities;
+using Personal_Cabinet_Uni.Shared.Models.Enums;
 
 namespace Personal_Cabinet_Uni.Data.Configurations;
 
@@ -43,21 +44,20 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
             .HasMaxLength(20);
         
         builder.Property(p => p.Birthday)
-            .HasColumnName("birthday")
-            .IsRequired();
+            .HasColumnName("birthday");
         
         builder.Property(p => p.Gender)
-            .HasColumnName("gender")
-            .IsRequired();
+            .HasColumnName("gender");
         
         builder.Property(p => p.Nationality)
             .HasColumnName("nationality")
             .IsRequired()
             .HasMaxLength(100);
         
-        builder.Property(p => p.PasswordHash)
-            .HasColumnName("password_hash")
-            .IsRequired();
+        builder.Property(p => p.Password)
+            .HasColumnName("password")
+            .IsRequired()
+            .HasMaxLength(256);
         
         builder.Property(p => p.Role)
             .HasColumnName("role")

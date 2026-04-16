@@ -70,7 +70,7 @@ public class ManageProfileController : ControllerBase
         }
 
         if (!string.Equals(email, userEmail, StringComparison.OrdinalIgnoreCase) && 
-            string.Equals(userRole, nameof(Role.Appplicant), StringComparison.OrdinalIgnoreCase))
+            string.Equals(userRole, nameof(Role.Applicant), StringComparison.OrdinalIgnoreCase))
         {
             throw new ForbiddenException("Доступ запрещен");
         }

@@ -10,7 +10,6 @@ using Personal_Cabinet_Uni.Shared.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
 {
@@ -44,18 +43,14 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Configure DbContext
 builder.Services.AddDbContext<ProfileDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configure repositories
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 
-// Configure services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 
-// Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 
@@ -84,7 +79,6 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -93,7 +87,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Глобальный обработчик исключений (должен быть перед UseAuthentication и UseAuthorization)
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthentication();

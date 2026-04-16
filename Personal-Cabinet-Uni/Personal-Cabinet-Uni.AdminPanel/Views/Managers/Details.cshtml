@@ -1,0 +1,220 @@
+@using Personal_Cabinet_Uni.Models.DTO.Response
+@model ProfileResponse
+@{
+    ViewData["Title"] = "Информация о менеджере";
+}
+
+<div class="manager-details-page">
+    <div class="form-header">
+        <a asp-controller="Managers" asp-action="Index" class="back-link">← Назад к списку</a>
+        <h1>Информация о менеджере</h1>
+    </div>
+
+    <div class="manager-card">
+        <div class="manager-header">
+            <div class="manager-avatar">
+                @Model.Surname[0]@Model.Name[0]
+            </div>
+            <div class="manager-info">
+                <h2>@Model.Surname @Model.Name @Model.LastName</h2>
+                <span class="badge badge-@Model.Role.ToString().ToLower()">@Model.Role</span>
+            </div>
+        </div>
+
+        <div class="manager-details">
+            <div class="detail-row">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">@Model.Email</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Телефон:</span>
+                <span class="detail-value">@Model.Phone</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Дата рождения:</span>
+                <span class="detail-value">@Model.Birthday?.ToString("dd.MM.yyyy")</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Пол:</span>
+                <span class="detail-value">@Model.Gender</span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Nationality))
+            {
+                <div class="detail-row">
+                    <span class="detail-label">Национальность:</span>
+                    <span class="detail-value">@Model.Nationality</span>
+                </div>
+            }
+            <div class="detail-row">
+                <span class="detail-label">Дата создания:</span>
+                <span class="detail-value">@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+            </div>
+        </div>
+
+        <div class="manager-actions">
+            <a asp-controller="Managers" asp-action="Edit" asp-route-email="@Model.Email" class="btn btn-primary">Редактировать</a>
+            <form asp-controller="Managers" asp-action="Delete" asp-route-email="@Model.Email" method="post" class="inline-form" onsubmit="return confirm('Вы уверены, что хотите удалить менеджера @Model.Email?');">
+                <button type="submit" class="btn btn-danger">Удалить</button>
+            </form>
+            <a asp-controller="Managers" asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .manager-details-page {
+            padding: 2rem 0;
+        }
+
+        .form-header {
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #667eea;
+            text-decoration: none;
+            margin-bottom: 1rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .form-header h1 {
+            margin: 0;
+            color: #333;
+        }
+
+        .manager-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .manager-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .manager-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .manager-info h2 {
+            margin: 0 0 0.5rem 0;
+            color: #333;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-manager {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-mainmanager {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge-admin {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .manager-details {
+            margin-bottom: 2rem;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: #666;
+            width: 200px;
+            flex-shrink: 0;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .manager-actions {
+            display: flex;
+            gap: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd6;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .inline-form {
+            display: inline;
+        }
+    </style>
+}

@@ -9,7 +9,9 @@ public interface IProfileRepository
     Task<Profile?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
     Task<Profile?> GetByRefreshTokenAsync(string token, CancellationToken cancellationToken = default);
     Task<IEnumerable<Profile>> GetAllAsync(int page, int limit, Role? role = null, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Profile>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<Profile> CreateAsync(Profile profile, CancellationToken cancellationToken = default);
     Task UpdateAsync(Profile profile, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

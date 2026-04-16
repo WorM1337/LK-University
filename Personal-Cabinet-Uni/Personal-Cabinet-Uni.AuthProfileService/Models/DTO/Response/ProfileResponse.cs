@@ -8,6 +8,11 @@ namespace Personal_Cabinet_Uni.Models.DTO.Response;
 public class ProfileResponse
 {
     /// <summary>
+    /// Идентификатор
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
     /// Имя
     /// </summary>
     public string Name { get; set; }
@@ -35,15 +40,25 @@ public class ProfileResponse
     /// <summary>
     /// Дата рождения
     /// </summary>
-    public DateTime Birthday { get; set; }
+    public DateTime? Birthday { get; set; }
     
     /// <summary>
     /// Пол
     /// </summary>
-    public Gender Gender { get; set; }
+    public Gender? Gender { get; set; }
     
     /// <summary>
     /// Национальность
     /// </summary>
     public string Nationality { get; set; }
+
+    /// <summary>
+    /// Роль
+    /// </summary>
+    public Role Role { get; set; }
+
+    /// <summary>
+    /// Дата создания
+    /// </summary>
+    public DateTime CreatedAt { get; set; }
 }

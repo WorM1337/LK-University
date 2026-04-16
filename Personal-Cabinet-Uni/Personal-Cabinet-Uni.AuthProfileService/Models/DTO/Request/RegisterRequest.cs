@@ -51,14 +51,12 @@ public class RegisterRequest
     /// <summary>
     /// Дата рождения
     /// </summary>
-    [Required]
-    public DateTime Birthday { get; set; }
+    public DateTime? Birthday { get; set; }
 
     /// <summary>
     /// Пол
     /// </summary>
-    [Required]
-    public Gender Gender { get; set; }
+    public Gender? Gender { get; set; }
     
     /// <summary>
     /// Национальность

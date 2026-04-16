@@ -34,12 +34,12 @@ public class Profile
     /// <summary>
     /// Дата рождения
     /// </summary>
-    public DateTime Birthday { get; set; }
+    public DateTime? Birthday { get; set; }
     
     /// <summary>
     /// Пол
     /// </summary>
-    public Gender Gender { get; set; }
+    public Gender? Gender { get; set; }
     
     /// <summary>
     /// Национальность
@@ -47,9 +47,9 @@ public class Profile
     public string Nationality { get; set; }
     
     /// <summary>
-    /// Хеш пароля
+    /// Пароль (хранится в открытом виде для разработки)
     /// </summary>
-    public string PasswordHash { get; set; }
+    public string Password { get; set; }
     
     /// <summary>
     /// Роль пользователя

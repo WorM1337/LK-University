@@ -26,13 +26,11 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
-        // Проверка существования пользователя с таким email
         if (await _profileRepository.ExistsByEmailAsync(request.Email, cancellationToken))
         {
             throw new ConflictException("Пользователь с таким email уже существует");
         }
 
-        // Создание профиля
         var profile = new Profile
         {
             Name = request.Name,
@@ -43,14 +41,13 @@ public class AuthService : IAuthService
             Birthday = request.Birthday,
             Gender = request.Gender,
             Nationality = request.Nationality,
-            PasswordHash = HashPassword(request.Password),
-            Role = Role.User, // По умолчанию роль User
+            Password = request.Password,
+            Role = Role.Applicant,
             CreatedAt = DateTime.UtcNow
         };
 
         await _profileRepository.CreateAsync(profile, cancellationToken);
 
-        // Генерация токенов
         var (accessToken, refreshToken) = GenerateTokens(profile);
 
         return new AuthResponse
@@ -62,7 +59,6 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        // Поиск пользователя по email
         var profile = await _profileRepository.GetByEmailAsync(request.Email, cancellationToken);
         
         if (profile == null)
@@ -70,13 +66,11 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("Неверный email или пароль");
         }
 
-        // Проверка пароля
-        if (!VerifyPassword(request.Password, profile.PasswordHash))
+        if (request.Password != profile.Password)
         {
             throw new UnauthorizedException("Неверный email или пароль");
         }
 
-        // Генерация токенов
         var (accessToken, refreshToken) = GenerateTokens(profile);
 
         return new AuthResponse
@@ -89,20 +83,17 @@ public class AuthService : IAuthService
     public async Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
     {
         
-        // Поиск пользователя по ID
         var profile = await _profileRepository.GetByRefreshTokenAsync(request.RefreshToken, cancellationToken);
         if (profile == null)
         {
             throw new UnauthorizedException("Пользователь с таким refresh токеном не найден");
         }
 
-        // Проверка срока действия refresh токена
         if (profile.RefreshTokenExpiryTime <= DateTime.UtcNow)
         {
             throw new UnauthorizedException("Refresh токен истек");
         }
 
-        // Генерация новых токенов
         var (accessToken, refreshToken) = GenerateTokens(profile);
 
         return new AuthResponse
@@ -117,7 +108,6 @@ public class AuthService : IAuthService
         var accessToken = GenerateJwtToken(profile);
         var refreshToken = GenerateRefreshToken();
         
-        // Сохранение refresh токена в БД
         profile.RefreshToken = refreshToken;
         profile.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
             double.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7"));
@@ -161,66 +151,130 @@ public class AuthService : IAuthService
         return Convert.ToBase64String(randomNumber);
     }
 
-    private ClaimsPrincipal? GetClaimsFromJwtToken(string token)
+    public async Task<ProfileResponse> CreateManagerAsync(CreateManagerRequest request, CancellationToken cancellationToken = default)
     {
-        try
+        if (await _profileRepository.ExistsByEmailAsync(request.Email, cancellationToken))
         {
-            var jwtSettings = _configuration.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? throw new BadRequestException("JWT SecretKey not configured")));
-            
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = false, // Не проверяем время жизни при обновлении токена
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSettings["Issuer"],
-                ValidAudience = jwtSettings["Audience"],
-                IssuerSigningKey = key
-            };
-
-            return tokenHandler.ValidateToken(token, validationParameters, out _);
+            throw new ConflictException("Пользователь с таким email уже существует");
         }
-        catch
+
+        if (request.Role != Role.Manager && request.Role != Role.MainManager)
+        {
+            throw new BadRequestException("Роль должна быть Manager или MainManager");
+        }
+
+        var profile = new Profile
+        {
+            Name = request.Name,
+            Surname = request.Surname,
+            LastName = request.LastName,
+            Email = request.Email,
+            Phone = request.Phone,
+            Birthday = request.Birthday.HasValue ? DateTime.SpecifyKind(request.Birthday.Value, DateTimeKind.Utc) : null,
+            Gender = request.Gender ?? null,
+            Nationality = request.Nationality,
+            Password = request.Password,
+            Role = request.Role,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _profileRepository.CreateAsync(profile, cancellationToken);
+
+        return MapToProfileResponse(profile);
+    }
+
+    public async Task<ProfileResponse> EditManagerAsync(string email, EditManagerRequest request, CancellationToken cancellationToken = default)
+    {
+        var profile = await _profileRepository.GetByEmailAsync(email, cancellationToken);
+        
+        if (profile == null)
+        {
+            throw new NotFoundException("Менеджер не найден");
+        }
+
+        if (!string.IsNullOrEmpty(request.Name))
+            profile.Name = request.Name;
+        if (!string.IsNullOrEmpty(request.Surname))
+            profile.Surname = request.Surname;
+        if (!string.IsNullOrEmpty(request.LastName))
+            profile.LastName = request.LastName;
+        if (!string.IsNullOrEmpty(request.Phone))
+            profile.Phone = request.Phone;
+        if (request.Birthday.HasValue)
+            profile.Birthday = DateTime.SpecifyKind(request.Birthday.Value, DateTimeKind.Utc);
+        if (request.Gender.HasValue)
+            profile.Gender = request.Gender.Value;
+        if (request.Nationality != null)
+            profile.Nationality = request.Nationality;
+        if (request.Role.HasValue)
+        {
+            if (request.Role != Role.Manager && request.Role != Role.MainManager)
+            {
+                throw new BadRequestException("Роль должна быть Manager или MainManager");
+            }
+            profile.Role = request.Role.Value;
+        }
+
+        await _profileRepository.UpdateAsync(profile, cancellationToken);
+
+        return MapToProfileResponse(profile);
+    }
+
+    public async Task<bool> DeleteManagerAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var profile = await _profileRepository.GetByEmailAsync(email, cancellationToken);
+        
+        if (profile == null)
+        {
+            throw new NotFoundException("Менеджер не найден");
+        }
+
+        if (profile.Role == Role.Admin)
+        {
+            throw new ForbiddenException("Нельзя удалить администратора");
+        }
+
+        await _profileRepository.DeleteAsync(profile.Id, cancellationToken);
+
+        return true;
+    }
+
+    public async Task<IEnumerable<ProfileResponse>> GetAllManagersAsync(CancellationToken cancellationToken = default)
+    {
+        var profiles = await _profileRepository.GetAllAsync(cancellationToken);
+        
+        var managers = profiles.Where(p => p.Role == Role.Manager || p.Role == Role.MainManager);
+        
+        return managers.Select(MapToProfileResponse);
+    }
+
+    public async Task<ProfileResponse?> GetManagerByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var profile = await _profileRepository.GetByEmailAsync(email, cancellationToken);
+        
+        if (profile == null)
         {
             return null;
         }
+
+        return MapToProfileResponse(profile);
     }
 
-    private string HashPassword(string password)
+    private ProfileResponse MapToProfileResponse(Profile profile)
     {
-        var salt = new byte[16];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(salt);
-
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 100000, HashAlgorithmName.SHA256);
-        var hash = pbkdf2.GetBytes(32);
-
-        var result = new byte[48];
-        Array.Copy(salt, 0, result, 0, 16);
-        Array.Copy(hash, 0, result, 16, 32);
-
-        return Convert.ToBase64String(result);
-    }
-
-    private bool VerifyPassword(string password, string hash)
-    {
-        var bytes = Convert.FromBase64String(hash);
-        var salt = new byte[16];
-        Array.Copy(bytes, 0, salt, 0, 16);
-
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 100000, HashAlgorithmName.SHA256);
-        var computedHash = pbkdf2.GetBytes(32);
-
-        for (int i = 0; i < 32; i++)
+        return new ProfileResponse
         {
-            if (bytes[i + 16] != computedHash[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
+            Id = profile.Id,
+            Name = profile.Name,
+            Surname = profile.Surname,
+            LastName = profile.LastName,
+            Email = profile.Email,
+            Phone = profile.Phone,
+            Birthday = profile.Birthday,
+            Gender = profile.Gender,
+            Nationality = profile.Nationality,
+            Role = profile.Role,
+            CreatedAt = profile.CreatedAt
+        };
     }
 }

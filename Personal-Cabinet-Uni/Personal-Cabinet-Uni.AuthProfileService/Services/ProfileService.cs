@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Personal_Cabinet_Uni.Data.Repositories;
 using Personal_Cabinet_Uni.Models.DTO.Request;
 using Personal_Cabinet_Uni.Models.DTO.Response;
@@ -35,7 +33,6 @@ public class ProfileService : IProfileService
         var profile = await _profileRepository.GetByEmailAsync(email, cancellationToken)
             ?? throw new NotFoundException("Профиль не найден");
 
-        // Обновление полей только если они предоставлены
         if (!string.IsNullOrEmpty(request.Name))
             profile.Name = request.Name;
         
@@ -49,7 +46,7 @@ public class ProfileService : IProfileService
             profile.Phone = request.Phone;
         
         if (request.Birthday.HasValue)
-            profile.Birthday = request.Birthday.Value;
+            profile.Birthday = DateTime.SpecifyKind(request.Birthday.Value, DateTimeKind.Utc);
         
         if (request.Gender.HasValue)
             profile.Gender = request.Gender.Value;
@@ -67,14 +64,11 @@ public class ProfileService : IProfileService
         var profile = await _profileRepository.GetByEmailAsync(email, cancellationToken)
             ?? throw new NotFoundException("Профиль не найден");
 
-        // Генерация временного пароля
         var tempPassword = GenerateTempPassword();
-        profile.PasswordHash = HashPassword(tempPassword);
+        profile.Password = tempPassword;
         
         await _profileRepository.UpdateAsync(profile, cancellationToken);
 
-        // TODO: Отправить уведомление о сбросе пароля через NotificationService
-        // Здесь должна быть интеграция с сервисом уведомлений
     }
 
     public async Task<ProfileResponse> CreateManagerAsync(CreateManagerRequest request, CancellationToken cancellationToken = default)
@@ -91,10 +85,10 @@ public class ProfileService : IProfileService
             LastName = request.LastName,
             Email = request.Email,
             Phone = request.Phone,
-            Birthday = request.Birthday ?? DateTime.MinValue,
+            Birthday = request.Birthday.HasValue ? DateTime.SpecifyKind(request.Birthday.Value, DateTimeKind.Utc) : DateTime.MinValue,
             Gender = request.Gender ?? Gender.Male,
             Nationality = request.Nationality,
-            PasswordHash = HashPassword(request.Password),
+            Password = request.Password,
             Role = request.Role,
             CreatedAt = DateTime.UtcNow
         };
@@ -109,7 +103,6 @@ public class ProfileService : IProfileService
         var profile = await _profileRepository.GetByEmailAsync(email, cancellationToken)
             ?? throw new NotFoundException("Профиль не найден");
 
-        // Обновление полей только если они предоставлены
         if (!string.IsNullOrEmpty(request.Name))
             profile.Name = request.Name;
         
@@ -123,7 +116,7 @@ public class ProfileService : IProfileService
             profile.Phone = request.Phone;
         
         if (request.Birthday.HasValue)
-            profile.Birthday = request.Birthday.Value;
+            profile.Birthday = DateTime.SpecifyKind(request.Birthday.Value, DateTimeKind.Utc);
         
         if (request.Gender.HasValue)
             profile.Gender = request.Gender.Value;
@@ -164,21 +157,5 @@ public class ProfileService : IProfileService
         }
         
         return new string(password);
-    }
-
-    private string HashPassword(string password)
-    {
-        var salt = new byte[16];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(salt);
-
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 100000, HashAlgorithmName.SHA256);
-        var hash = pbkdf2.GetBytes(32);
-
-        var result = new byte[48];
-        Array.Copy(salt, 0, result, 0, 16);
-        Array.Copy(hash, 0, result, 16, 32);
-
-        return Convert.ToBase64String(result);
     }
 }

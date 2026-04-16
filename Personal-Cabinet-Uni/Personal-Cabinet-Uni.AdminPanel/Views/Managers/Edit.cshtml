@@ -1,0 +1,200 @@
+@model EditManagerRequest
+@{
+    ViewData["Title"] = "Редактирование менеджера";
+    var roles = ViewBag.Roles as List<Role>;
+    var genders = ViewBag.Genders as List<Gender>;
+    var email = ViewBag.Email as string;
+}
+
+<div class="manager-form-page">
+    <div class="form-header">
+        <a asp-controller="Managers" asp-action="Index" class="back-link">← Назад к списку</a>
+        <h1>Редактирование менеджера</h1>
+    </div>
+
+    <div class="form-container">
+        <form asp-action="Edit" asp-route-email="@email" method="post">
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Surname">Фамилия</label>
+                    <input asp-for="Surname" class="form-control" />
+                    <span asp-validation-for="Surname" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Name">Имя</label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="LastName">Отчество</label>
+                    <input asp-for="LastName" class="form-control" />
+                    <span asp-validation-for="LastName" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Phone">Телефон</label>
+                    <input asp-for="Phone" type="tel" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Birthday">Дата рождения</label>
+                    <input asp-for="Birthday" type="date" class="form-control" />
+                    <span asp-validation-for="Birthday" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Gender">Пол</label>
+                    <select asp-for="Gender" class="form-control">
+                        <option value="">Не указано</option>
+                        @if (genders != null)
+                        {
+                            @foreach (var gender in genders)
+                            {
+                                <option value="@gender">@gender</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="Gender" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Nationality">Национальность</label>
+                    <input asp-for="Nationality" class="form-control" />
+                    <span asp-validation-for="Nationality" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Role">Роль</label>
+                    <select asp-for="Role" class="form-control">
+                        @if (roles != null)
+                        {
+                            @foreach (var role in roles)
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="Role" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                <a asp-controller="Managers" asp-action="Index" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .manager-form-page {
+            padding: 2rem 0;
+        }
+
+        .form-header {
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #667eea;
+            text-decoration: none;
+            margin-bottom: 1rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .form-header h1 {
+            margin: 0;
+            color: #333;
+        }
+
+        .form-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-control {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd6;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .text-danger {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+}

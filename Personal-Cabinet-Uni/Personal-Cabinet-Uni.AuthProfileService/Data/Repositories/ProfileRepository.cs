@@ -48,6 +48,24 @@ public class ProfileRepository : IProfileRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<Profile>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Profiles
+            .OrderBy(p => p.Surname)
+            .ThenBy(p => p.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var profile = await GetByIdAsync(id, cancellationToken);
+        if (profile != null)
+        {
+            _context.Profiles.Remove(profile);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
     public async Task<Profile> CreateAsync(Profile profile, CancellationToken cancellationToken = default)
     {
         profile.Id = Guid.NewGuid();

@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Главная панель";
+}
+
+<div class="dashboard">
+    <h1>Добро пожаловать, @ViewBag.UserName!</h1>
+    <p class="dashboard-subtitle">Email: @ViewBag.UserEmail</p>
+
+    <div class="dashboard-cards">
+        <div class="card">
+            <div class="card-icon">👥</div>
+            <div class="card-content">
+                <h3>Управление менеджерами</h3>
+                <p>Создание, редактирование и удаление менеджеров и главных менеджеров</p>
+                <a asp-controller="Managers" asp-action="Index" class="btn btn-primary">Перейти</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .dashboard {
+            padding: 2rem 0;
+        }
+
+        .dashboard h1 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .dashboard-subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+        }
+
+        .card-content h3 {
+            margin: 0 0 0.5rem 0;
+            color: #333;
+        }
+
+        .card-content p {
+            color: #666;
+            margin: 0 0 1rem 0;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd6;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    </style>
+}
