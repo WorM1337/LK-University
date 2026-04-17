@@ -68,7 +68,8 @@ public class ProfileService : IProfileService
         profile.Password = tempPassword;
         
         await _profileRepository.UpdateAsync(profile, cancellationToken);
-
+        
+        // TODO: Отправить временный пароль на почту
     }
 
     public async Task<ProfileResponse> CreateManagerAsync(CreateManagerRequest request, CancellationToken cancellationToken = default)
