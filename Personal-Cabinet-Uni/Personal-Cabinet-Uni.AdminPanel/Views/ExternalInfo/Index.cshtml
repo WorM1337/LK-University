@@ -1,0 +1,52 @@
+@model Personal_Cabinet_Uni.AdminPanel.Models.DTO.ExternalInfo.ExternalInfoIndexViewModel
+@using Personal_Cabinet_Uni.Shared.Models.Enums
+
+@{
+    ViewData["Title"] = "Справочники";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Справочники внешней системы</h1>
+        <p class="page-subtitle">Ручная загрузка актуальных данных из 1C mock API</p>
+    </div>
+</div>
+
+<div class="dictionary-grid">
+    @foreach (var dictionary in Model.Dictionaries)
+    {
+        var statusClass = dictionary.Status switch
+        {
+            DictionaryImportingStatus.Success => "status-success",
+            DictionaryImportingStatus.Processing => "status-processing",
+            _ => "status-failed"
+        };
+
+        <section class="dictionary-card">
+            <div class="dictionary-card-header">
+                <h2>@dictionary.Title</h2>
+                <span class="status-badge @statusClass">@dictionary.Status</span>
+            </div>
+
+            <dl class="dictionary-meta">
+                <div>
+                    <dt>Записей</dt>
+                    <dd>@dictionary.ImportedCount</dd>
+                </div>
+                <div>
+                    <dt>Обновлено</dt>
+                    <dd>@(dictionary.UpdatedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "не запускалось")</dd>
+                </div>
+            </dl>
+
+            @if (!string.IsNullOrWhiteSpace(dictionary.ErrorMessage) && dictionary.Status == DictionaryImportingStatus.Failed)
+            {
+                <p class="dictionary-error">@dictionary.ErrorMessage</p>
+            }
+
+            <form asp-action="@dictionary.ImportAction" method="post">
+                <button type="submit" class="btn btn-primary">Загрузить актуальные данные</button>
+            </form>
+        </section>
+    }
+</div>

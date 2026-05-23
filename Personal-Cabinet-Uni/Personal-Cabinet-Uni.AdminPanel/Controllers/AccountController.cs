@@ -3,10 +3,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Personal_Cabinet_Uni.AdminPanel.Models.DTO.Request;
 using Personal_Cabinet_Uni.AdminPanel.Services;
+using Personal_Cabinet_Uni.Shared.Models.Enums;
 using System.Security.Claims;
-using System.Text;
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Personal_Cabinet_Uni.AdminPanel.Controllers;
 
@@ -58,7 +57,7 @@ public class AccountController : Controller
             var claims = GetClaimsFromJwt(authResponse.AccessToken);
             var roleClaim = claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
-            if (roleClaim != "Admin")
+            if (roleClaim != nameof(Role.Admin))
             {
                 ViewBag.Error = "Доступ запрещён. Требуется роль администратора.";
                 return View(request);
@@ -79,6 +78,12 @@ public class AccountController : Controller
             _logger.LogInformation("Админ {Email} успешно вошёл в систему", request.Email);
 
             return RedirectToAction("Index", "Dashboard");
+        }
+        catch (AuthServiceClientException ex)
+        {
+            _logger.LogWarning(ex, "Auth service rejected admin login for {Email}", request.Email);
+            ViewBag.Error = ex.Message;
+            return View(request);
         }
         catch (Exception ex)
         {
@@ -103,6 +108,26 @@ public class AccountController : Controller
     {
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(jwtToken);
-        return jwt.Claims.ToList();
+        var claims = jwt.Claims.ToList();
+
+        AddClaimIfMissing(claims, ClaimTypes.Email, "email");
+        AddClaimIfMissing(claims, ClaimTypes.Name, "name");
+        AddClaimIfMissing(claims, ClaimTypes.Role, "role");
+
+        return claims;
+    }
+
+    private static void AddClaimIfMissing(List<Claim> claims, string targetType, string sourceType)
+    {
+        if (claims.Any(claim => claim.Type == targetType))
+        {
+            return;
+        }
+
+        var sourceClaim = claims.FirstOrDefault(claim => claim.Type == sourceType);
+        if (sourceClaim != null)
+        {
+            claims.Add(new Claim(targetType, sourceClaim.Value));
+        }
     }
 }

@@ -20,6 +20,12 @@ builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
     client.BaseAddress = new Uri(baseUrl);
 });
 
+builder.Services.AddHttpClient<IExternalInfoServiceClient, ExternalInfoServiceClient>(client =>
+{
+    var baseUrl = builder.Configuration["ExternalInfoMicroservice:BaseUrl"] ?? "http://localhost:5004";
+    client.BaseAddress = new Uri(baseUrl);
+});
+
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 
@@ -76,7 +82,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

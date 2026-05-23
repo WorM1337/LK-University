@@ -18,6 +18,7 @@
                 {
                     <li><a asp-controller="Dashboard" asp-action="Index">Главная</a></li>
                     <li><a asp-controller="Managers" asp-action="Index">Управление менеджерами</a></li>
+                    <li><a asp-controller="ExternalInfo" asp-action="Index">Справочники</a></li>
                     <li>
                         <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
                             <button type="submit" class="logout-btn">Выход (@User.Identity?.Name)</button>

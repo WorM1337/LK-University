@@ -17,11 +17,16 @@ public class AuthService : IAuthService
 {
     private readonly IProfileRepository _profileRepository;
     private readonly IConfiguration _configuration;
+    private readonly INotificationPublisher _notificationPublisher;
 
-    public AuthService(IProfileRepository profileRepository, IConfiguration configuration)
+    public AuthService(
+        IProfileRepository profileRepository,
+        IConfiguration configuration,
+        INotificationPublisher notificationPublisher)
     {
         _profileRepository = profileRepository;
         _configuration = configuration;
+        _notificationPublisher = notificationPublisher;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -49,6 +54,7 @@ public class AuthService : IAuthService
         await _profileRepository.CreateAsync(profile, cancellationToken);
 
         var (accessToken, refreshToken) = GenerateTokens(profile);
+        await _notificationPublisher.PublishApplicantRegisteredAsync(profile, cancellationToken);
 
         return new AuthResponse
         {
@@ -72,6 +78,7 @@ public class AuthService : IAuthService
         }
 
         var (accessToken, refreshToken) = GenerateTokens(profile);
+        await _notificationPublisher.PublishLoginAsync(profile, cancellationToken);
 
         return new AuthResponse
         {
@@ -179,6 +186,7 @@ public class AuthService : IAuthService
         };
 
         await _profileRepository.CreateAsync(profile, cancellationToken);
+        await _notificationPublisher.PublishManagerCreatedAsync(profile, cancellationToken);
 
         return MapToProfileResponse(profile);
     }
@@ -216,6 +224,7 @@ public class AuthService : IAuthService
         }
 
         await _profileRepository.UpdateAsync(profile, cancellationToken);
+        await _notificationPublisher.PublishManagerUpdatedAsync(profile, cancellationToken);
 
         return MapToProfileResponse(profile);
     }
@@ -235,6 +244,7 @@ public class AuthService : IAuthService
         }
 
         await _profileRepository.DeleteAsync(profile.Id, cancellationToken);
+        await _notificationPublisher.PublishManagerDeletedAsync(profile, cancellationToken);
 
         return true;
     }

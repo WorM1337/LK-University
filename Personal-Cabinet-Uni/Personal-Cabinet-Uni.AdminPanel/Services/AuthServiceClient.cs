@@ -3,7 +3,8 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Personal_Cabinet_Uni.AdminPanel.Models.DTO.Request;
-using Personal_Cabinet_Uni.Models.DTO.Response;
+using Personal_Cabinet_Uni.AdminPanel.Models.DTO.Response;
+using Personal_Cabinet_Uni.Shared.Models.DTO.Response;
 
 namespace Personal_Cabinet_Uni.AdminPanel.Services;
 
@@ -24,78 +25,86 @@ public class AuthServiceClient : IAuthServiceClient
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("auth/login", request, cancellationToken);
-
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadFromJsonAsync<AuthResponse>(cancellationToken: cancellationToken);
-        }
-
-        return null;
+        using var response = await _httpClient.PostAsJsonAsync("auth/login", request, _jsonOptions, cancellationToken);
+        return await ReadOrThrowAsync<AuthResponse>(response, cancellationToken);
     }
 
-    public async Task<ProfileResponse?> CreateManagerAsync(CreateManagerRequest request, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<ManagerResponse?> CreateManagerAsync(CreateManagerRequest request, string adminToken, CancellationToken cancellationToken = default)
     {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-
-        var response = await _httpClient.PostAsJsonAsync("auth/manager", request, _jsonOptions, cancellationToken);
-
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadFromJsonAsync<ProfileResponse>(_jsonOptions, cancellationToken);
-        }
-
-        return null;
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Post, "auth/manager", adminToken);
+        httpRequest.Content = JsonContent.Create(request, options: _jsonOptions);
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        return await ReadOrThrowAsync<ManagerResponse>(response, cancellationToken);
     }
 
-    public async Task<ProfileResponse?> EditManagerAsync(string email, EditManagerRequest request, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<ManagerResponse?> EditManagerAsync(string email, EditManagerRequest request, string adminToken, CancellationToken cancellationToken = default)
     {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-
-        var response = await _httpClient.PatchAsJsonAsync($"auth/manager/{email}", request, _jsonOptions, cancellationToken);
-
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadFromJsonAsync<ProfileResponse>(_jsonOptions, cancellationToken);
-        }
-
-        return null;
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Patch, $"auth/manager/{Uri.EscapeDataString(email)}", adminToken);
+        httpRequest.Content = JsonContent.Create(request, options: _jsonOptions);
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        return await ReadOrThrowAsync<ManagerResponse>(response, cancellationToken);
     }
 
     public async Task<bool> DeleteManagerAsync(string email, string adminToken, CancellationToken cancellationToken = default)
     {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-
-        var response = await _httpClient.DeleteAsync($"auth/manager/{email}", cancellationToken);
-
-        return response.IsSuccessStatusCode;
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Delete, $"auth/manager/{Uri.EscapeDataString(email)}", adminToken);
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        return true;
     }
 
-    public async Task<IEnumerable<ProfileResponse>?> GetAllManagersAsync(string adminToken, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ManagerResponse>?> GetAllManagersAsync(string adminToken, CancellationToken cancellationToken = default)
     {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-
-        var response = await _httpClient.GetAsync("auth/managers", cancellationToken);
-
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadFromJsonAsync<IEnumerable<ProfileResponse>>(_jsonOptions, cancellationToken);
-        }
-
-        return null;
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Get, "auth/managers", adminToken);
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        return await ReadOrThrowAsync<IEnumerable<ManagerResponse>>(response, cancellationToken);
     }
 
-    public async Task<ProfileResponse?> GetManagerByEmailAsync(string email, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<ManagerResponse?> GetManagerByEmailAsync(string email, string adminToken, CancellationToken cancellationToken = default)
     {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        using var httpRequest = CreateAuthorizedRequest(HttpMethod.Get, $"auth/manager/{Uri.EscapeDataString(email)}", adminToken);
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        return await ReadOrThrowAsync<ManagerResponse>(response, cancellationToken);
+    }
 
-        var response = await _httpClient.GetAsync($"auth/manager/{email}", cancellationToken);
+    private static HttpRequestMessage CreateAuthorizedRequest(HttpMethod method, string requestUri, string token)
+    {
+        var request = new HttpRequestMessage(method, requestUri);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return request;
+    }
 
+    private async Task<T?> ReadOrThrowAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        await EnsureSuccessAsync(response, cancellationToken);
+        return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken);
+    }
+
+    private async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<ProfileResponse>(_jsonOptions, cancellationToken);
+            return;
         }
 
-        return null;
+        var message = await ReadErrorMessageAsync(response, cancellationToken);
+        throw new AuthServiceClientException((int)response.StatusCode, message);
+    }
+
+    private async Task<string> ReadErrorMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(_jsonOptions, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(error?.Message))
+            {
+                return error.Message;
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return $"Auth service returned {(int)response.StatusCode} {response.ReasonPhrase}";
     }
 }

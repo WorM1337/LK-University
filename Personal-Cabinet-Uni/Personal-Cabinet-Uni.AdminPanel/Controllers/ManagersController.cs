@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Personal_Cabinet_Uni.AdminPanel.Models.DTO.Request;
+using Personal_Cabinet_Uni.AdminPanel.Models.DTO.Response;
 using Personal_Cabinet_Uni.AdminPanel.Services;
-using Personal_Cabinet_Uni.Models.DTO.Response;
 using Personal_Cabinet_Uni.Shared.Models.Enums;
 
 namespace Personal_Cabinet_Uni.AdminPanel.Controllers;
@@ -33,16 +33,17 @@ public class ManagersController : Controller
         try
         {
             var managers = await _authServiceClient.GetAllManagersAsync(token);
-            return View(managers ?? Enumerable.Empty<ProfileResponse>());
+            return View(managers ?? Enumerable.Empty<ManagerResponse>());
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при получении списка менеджеров");
-            return View(Enumerable.Empty<ProfileResponse>());
+            TempData["Error"] = "Не удалось получить список менеджеров";
+            return View(Enumerable.Empty<ManagerResponse>());
         }
     }
 
-    [HttpGet("{email}")]
+    [HttpGet]
     public async Task<IActionResult> Details(string email)
     {
         var token = GetAdminToken();
@@ -63,6 +64,7 @@ public class ManagersController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при получении информации о менеджере {Email}", email);
+            TempData["Error"] = "Не удалось получить информацию о менеджере";
             return NotFound();
         }
     }
@@ -70,8 +72,7 @@ public class ManagersController : Controller
     [HttpGet]
     public IActionResult Create()
     {
-        ViewBag.Roles = Enum.GetValues(typeof(Role)).Cast<Role>().Where(r => r == Role.Manager || r == Role.MainManager).ToList();
-        ViewBag.Genders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
+        FillSelectLists();
         return View();
     }
 
@@ -86,8 +87,7 @@ public class ManagersController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.Roles = Enum.GetValues(typeof(Role)).Cast<Role>().Where(r => r == Role.Manager || r == Role.MainManager).ToList();
-            ViewBag.Genders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
+            FillSelectLists();
             return View(request);
         }
 
@@ -100,19 +100,26 @@ public class ManagersController : Controller
                 return RedirectToAction("Index", "Managers");
             }
 
-            TempData["Error"] = "Не удалось создать менеджера";
+            TempData["Error"] = "Auth service не вернул созданного менеджера";
+            return View(request);
+        }
+        catch (AuthServiceClientException ex)
+        {
+            _logger.LogWarning(ex, "Auth service rejected manager creation {Email}", request.Email);
+            FillSelectLists();
+            ModelState.AddModelError(string.Empty, ex.Message);
             return View(request);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при создании менеджера {Email}", request.Email);
-            ViewBag.Roles = Enum.GetValues(typeof(Role)).Cast<Role>().Where(r => r == Role.Manager || r == Role.MainManager).ToList();
-            ViewBag.Genders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
+            FillSelectLists();
+            ModelState.AddModelError(string.Empty, "Произошла ошибка при создании менеджера");
             return View(request);
         }
     }
 
-    [HttpGet("{email}/Edit")]
+    [HttpGet]
     public async Task<IActionResult> Edit(string email)
     {
         var token = GetAdminToken();
@@ -141,20 +148,19 @@ public class ManagersController : Controller
                 Role = manager.Role
             };
 
-            ViewBag.Roles = Enum.GetValues(typeof(Role)).Cast<Role>().Where(r => r == Role.Manager || r == Role.MainManager).ToList();
-            ViewBag.Genders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
-            ViewBag.Email = email;
+            FillSelectLists(email);
 
             return View(model);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при получении информации о менеджере {Email}", email);
+            TempData["Error"] = "Не удалось открыть менеджера для редактирования";
             return NotFound();
         }
     }
 
-    [HttpPost("{email}/Edit")]
+    [HttpPost]
     public async Task<IActionResult> Edit(string email, EditManagerRequest request)
     {
         var token = GetAdminToken();
@@ -165,9 +171,7 @@ public class ManagersController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.Roles = Enum.GetValues(typeof(Role)).Cast<Role>().Where(r => r == Role.Manager || r == Role.MainManager).ToList();
-            ViewBag.Genders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
-            ViewBag.Email = email;
+            FillSelectLists(email);
             return View(request);
         }
 
@@ -180,23 +184,27 @@ public class ManagersController : Controller
                 return RedirectToAction("Index", "Managers");
             }
 
-            TempData["Error"] = "Не удалось обновить данные менеджера";
-            ViewBag.Roles = Enum.GetValues(typeof(Role)).Cast<Role>().Where(r => r == Role.Manager || r == Role.MainManager).ToList();
-            ViewBag.Genders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
-            ViewBag.Email = email;
+            TempData["Error"] = "Auth service не вернул обновленного менеджера";
+            FillSelectLists(email);
+            return View(request);
+        }
+        catch (AuthServiceClientException ex)
+        {
+            _logger.LogWarning(ex, "Auth service rejected manager update {Email}", email);
+            FillSelectLists(email);
+            ModelState.AddModelError(string.Empty, ex.Message);
             return View(request);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при обновлении данных менеджера {Email}", email);
-            ViewBag.Roles = Enum.GetValues(typeof(Role)).Cast<Role>().Where(r => r == Role.Manager || r == Role.MainManager).ToList();
-            ViewBag.Genders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
-            ViewBag.Email = email;
+            FillSelectLists(email);
+            ModelState.AddModelError(string.Empty, "Произошла ошибка при обновлении менеджера");
             return View(request);
         }
     }
 
-    [HttpPost("{email}/Delete")]
+    [HttpPost]
     public async Task<IActionResult> Delete(string email)
     {
         var token = GetAdminToken();
@@ -217,9 +225,16 @@ public class ManagersController : Controller
             TempData["Error"] = "Не удалось удалить менеджера";
             return RedirectToAction("Index", "Managers");
         }
+        catch (AuthServiceClientException ex)
+        {
+            _logger.LogWarning(ex, "Auth service rejected manager delete {Email}", email);
+            TempData["Error"] = ex.Message;
+            return RedirectToAction("Index", "Managers");
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при удалении менеджера {Email}", email);
+            TempData["Error"] = "Произошла ошибка при удалении менеджера";
             return RedirectToAction("Index", "Managers");
         }
     }
@@ -227,5 +242,12 @@ public class ManagersController : Controller
     private string? GetAdminToken()
     {
         return HttpContext.Session.GetString("AccessToken");
+    }
+
+    private void FillSelectLists(string? email = null)
+    {
+        ViewBag.Roles = Enum.GetValues(typeof(Role)).Cast<Role>().Where(r => r == Role.Manager || r == Role.MainManager).ToList();
+        ViewBag.Genders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
+        ViewBag.Email = email;
     }
 }

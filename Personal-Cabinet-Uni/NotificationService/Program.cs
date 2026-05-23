@@ -29,8 +29,9 @@ builder.Services.AddMassTransit(x =>
             }
         );
 
-        cfg.ReceiveEndpoint("notification-queue", e =>
+        cfg.ReceiveEndpoint(rabbitMqSettings["QueueName"] ?? "notification-queue", e =>
         {
+            e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
             e.ConfigureConsumer<NotificationConsumer>(context);
         });
     });

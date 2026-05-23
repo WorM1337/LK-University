@@ -10,10 +10,12 @@ namespace Personal_Cabinet_Uni.Services;
 public class ProfileService : IProfileService
 {
     private readonly IProfileRepository _profileRepository;
+    private readonly INotificationPublisher _notificationPublisher;
 
-    public ProfileService(IProfileRepository profileRepository)
+    public ProfileService(IProfileRepository profileRepository, INotificationPublisher notificationPublisher)
     {
         _profileRepository = profileRepository;
+        _notificationPublisher = notificationPublisher;
     }
 
     public async Task<IEnumerable<ProfileResponse>> GetAllAsync(int page, int limit, Role? role = null, CancellationToken cancellationToken = default)
@@ -55,6 +57,7 @@ public class ProfileService : IProfileService
             profile.Nationality = request.Nationality;
 
         await _profileRepository.UpdateAsync(profile, cancellationToken);
+        await _notificationPublisher.PublishProfileUpdatedAsync(profile, cancellationToken);
 
         return MapToResponse(profile);
     }
@@ -68,8 +71,7 @@ public class ProfileService : IProfileService
         profile.Password = tempPassword;
         
         await _profileRepository.UpdateAsync(profile, cancellationToken);
-        
-        // TODO: Отправить временный пароль на почту
+        await _notificationPublisher.PublishPasswordResetAsync(profile, tempPassword, cancellationToken);
     }
 
     public async Task<ProfileResponse> CreateManagerAsync(CreateManagerRequest request, CancellationToken cancellationToken = default)
@@ -95,6 +97,7 @@ public class ProfileService : IProfileService
         };
 
         await _profileRepository.CreateAsync(profile, cancellationToken);
+        await _notificationPublisher.PublishManagerCreatedAsync(profile, cancellationToken);
 
         return MapToResponse(profile);
     }
@@ -129,6 +132,7 @@ public class ProfileService : IProfileService
             profile.Role = request.Role.Value;
 
         await _profileRepository.UpdateAsync(profile, cancellationToken);
+        await _notificationPublisher.PublishManagerUpdatedAsync(profile, cancellationToken);
     }
 
     private static ProfileResponse MapToResponse(Profile profile)

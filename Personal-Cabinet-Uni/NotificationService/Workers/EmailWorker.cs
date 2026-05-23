@@ -39,8 +39,17 @@ public class EmailWorker : IEmailWorker
             email.Body = bodyBuilder.ToMessageBody();
 
             using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.Port, SecureSocketOptions.StartTls, cancellationToken);
-            await smtp.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password, cancellationToken);
+            var socketOptions = _emailSettings.UseStartTls
+                ? SecureSocketOptions.StartTls
+                : SecureSocketOptions.Auto;
+
+            await smtp.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.Port, socketOptions, cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(_emailSettings.Username))
+            {
+                await smtp.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password, cancellationToken);
+            }
+
             await smtp.SendAsync(email, cancellationToken);
             await smtp.DisconnectAsync(true, cancellationToken);
 
@@ -61,4 +70,5 @@ public class EmailSettings
     public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string From { get; set; } = string.Empty;
+    public bool UseStartTls { get; set; } = true;
 }
